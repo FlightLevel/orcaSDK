@@ -274,6 +274,24 @@ public:
 	void run();
 
 	/**
+	 * @brief handle the motor frame transmissions cadence
+	 * @
+	 * This dispatches transmissions for motor frames when connected and dispatches handshake messages when not.
+	 * This function must be externally paced... i.e. called at the frequency that transmission should be sent
+	 */
+	void run_out();
+
+	/**
+	 * @brief Incoming message parsing and connection handling
+	 *
+	 * Polls uart polled timers
+	 * Claims responses from the message queue.
+	 * Maintains the connection state based on consecutive failed messages
+	 * Parses successful messages
+	 */
+	void run_in();
+
+	/**
 	 * @brief	Enables command streaming with the Orca. 
 	 *		
 	 *		Command streaming is the main form of asynchronous communication with the Orca. Command
@@ -602,24 +620,6 @@ private:
 	int64_t _time_since_last_response_microseconds;
 
 	void handle_transaction_response(Transaction response);
-
-	/**
-	 * @brief handle the motor frame transmissions cadence
-	 * @
-	 * This dispatches transmissions for motor frames when connected and dispatches handshake messages when not.
-	 * This function must be externally paced... i.e. called at the frequency that transmission should be sent
-	 */
-	void run_out();
-
-	/**
-	 * @brief Incoming message parsing and connection handling
-	 *
-	 * Polls uart polled timers
-	 * Claims responses from the message queue.
-	 * Maintains the connection state based on consecutive failed messages
-	 * Parses successful messages
-	 */
-	void run_in();
 
 	/**
 	 * @brief	Flushes all queued messages, blocking the current thread of execution
