@@ -138,9 +138,17 @@ public:
 	/**
 	* @brief Returns the position of the shaft in the motor (distance from the zero position) in micrometers.
 	*
-	* @return uint32_t  Position in micrometers
+	* @return int32_t  Position in micrometers
 	*/
 	OrcaResult<int32_t> get_position_um();
+
+	/**
+	* @brief Returns the speed of the shaft in the motor in millimeters per second.
+	*
+	* @return int32_t  Speed in millimeters per second
+	*/
+	OrcaResult<int32_t> get_speed_mm();
+
 
 	/**
 	* @brief Returns the bitmask representing all active errors on the motor.

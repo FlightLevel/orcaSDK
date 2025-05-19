@@ -1,8 +1,7 @@
 include(FetchContent)
 FetchContent_Declare(
 	asio-repo
-	GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-	GIT_TAG 03ae834edbace31a96157b89bf50e5ee464e5ef9 # release 1.32.0
+	SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/asio
 	FIND_PACKAGE_ARGS
 )
 

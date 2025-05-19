@@ -169,6 +169,10 @@ OrcaResult<int32_t> Actuator::get_position_um() {
 	return read_wide_register_blocking(SHAFT_POS_UM);
 }
 
+OrcaResult<int32_t> Actuator::get_speed_mm() {
+	return read_wide_register_blocking(SHAFT_SPEED_MMPS);
+}
+
 void Actuator::update_haptic_stream_effects(uint16_t effects) {
 	stream.set_haptic_effects(effects);
 }

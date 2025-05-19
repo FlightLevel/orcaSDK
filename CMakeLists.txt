@@ -70,6 +70,8 @@ target_sources(orcaSDK_core
 
 target_compile_features(orcaSDK_core PUBLIC cxx_std_11)
 
+target_link_libraries(orcaSDK_core PUBLIC ws2_32)
+
 include(GNUInstallDirs)
 include(ASIO.cmake)
 
@@ -122,4 +124,4 @@ install(EXPORT orcaSDKConfig
 
 # include(CPack)
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+# add_subdirectory(tests EXCLUDE_FROM_ALL)

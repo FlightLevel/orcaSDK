@@ -126,7 +126,11 @@ namespace orcaSDK {
 				std::time_t now = std::time(0);
 
 				std::tm localtm;
+				#ifdef _WIN32
 				localtime_s(&localtm, &now);
+				#else
+				localtime_r(&now, &localtm);
+				#endif
 
 				std::stringstream ss;
 				try {
