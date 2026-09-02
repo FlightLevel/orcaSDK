@@ -12,6 +12,8 @@ add_library(orcaSDK_core
 	src/command_and_confirm.cpp
  "src/constants.h")
 add_library(orcaSDK::core ALIAS orcaSDK_core)
+
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 	
 target_sources(orcaSDK_core
 	PUBLIC
@@ -70,7 +72,10 @@ target_sources(orcaSDK_core
 
 target_compile_features(orcaSDK_core PUBLIC cxx_std_11)
 
-target_link_libraries(orcaSDK_core PUBLIC ws2_32)
+if(DEFINED WIN32)
+	message(STATUS "Linking against ws2_32 on Windows")
+	target_link_libraries(orcaSDK_core PUBLIC ws2_32)
+endif()
 
 include(GNUInstallDirs)
 include(ASIO.cmake)
@@ -124,4 +129,9 @@ install(EXPORT orcaSDKConfig
 
 # include(CPack)
 
-# add_subdirectory(tests EXCLUDE_FROM_ALL)
+option(ORCASDK_BUILD_UNIT_TESTS "Build the orcaSDK unit and integration tests" OFF)
+if(ORCASDK_BUILD_UNIT_TESTS)
+	enable_testing()
+	include(tests/GoogleTestInstall.cmake)
+	add_subdirectory(tests/UnitAndIntegration)
+endif()

@@ -5,6 +5,7 @@ add_executable(orcaSDKUnitTests
 	IrisSDKTests/modbus/ModbusClientTests.cpp
 	IrisSDKTests/modbus/TransactionConstructionTests.cpp
 	IrisSDKTests/modbus/ActuatorIntegrationTests.cpp
+	IrisSDKTests/modbus/AsyncHapticTests.cpp
 )
 
 target_include_directories(orcaSDKUnitTests 

@@ -41,6 +41,17 @@
 namespace orcaSDK
 {
 
+enum class TransactionQueueTag : uint8_t {
+    none,
+    constant_force,
+    friction,
+    damping,
+    command_stream,
+    spring0,
+    spring1,
+    spring2
+};
+
 /**
  * @class Transaction
  * @brief MODBUS RTU frame object for outgoing and respective incoming requests.
@@ -176,6 +187,14 @@ public:
      */
     bool is_dequeued() {
     	return my_state == dequeued;
+    }
+
+    void set_queue_tag(TransactionQueueTag tag) {
+        queue_tag = tag;
+    }
+
+    bool has_queue_tag(TransactionQueueTag tag) const {
+        return queue_tag == tag;
     }
 
     /**
@@ -391,6 +410,7 @@ public:
     void generate_retry(Transaction* last_transaction)
     {
         mark_important();
+        queue_tag = last_transaction->queue_tag;
         num_retries = last_transaction->get_num_retries() + 1;
         reception_length = last_transaction->get_expected_length();
         uint8_t* prev_tx_buffer = last_transaction->get_raw_tx_data();
@@ -431,6 +451,7 @@ private:
 
     bool important = false;
     int num_retries = 0;
+    TransactionQueueTag queue_tag = TransactionQueueTag::none;
 
     enum TRANSMIT_STATE {
         unused = 33,			// not a valid transaction to send
@@ -457,4 +478,3 @@ private:
 }
 
 #endif
-

@@ -12,6 +12,32 @@
 
 namespace orcaSDK {
 
+namespace {
+
+constexpr uint16_t kForwardFrictionRegister = 674;
+constexpr uint16_t kReverseFrictionRegister = 676;
+
+Transaction make_wide_register_write_transaction(
+	uint8_t modbus_server_address,
+	uint16_t reg_address,
+	int32_t write_data,
+	MessagePriority priority)
+{
+	uint16_t split_data[2]{
+		uint16_t(write_data),
+		uint16_t(write_data >> 16)
+	};
+	uint8_t data[4];
+	for (int i = 0; i < 2; i++) {
+		data[i * 2] = uint8_t(split_data[i] >> 8);
+		data[i * 2 + 1] = uint8_t(split_data[i]);
+	}
+	return DefaultModbusFunctions::write_multiple_registers_fn(
+		modbus_server_address, reg_address, 2, data, priority);
+}
+
+}
+
 int32_t combine_into_wide_register(uint16_t low_reg_value, uint16_t high_reg_value)
 {
 	return ((int32_t)high_reg_value << 16) + low_reg_value;
@@ -118,11 +144,10 @@ OrcaError Actuator::write_register_blocking(uint16_t reg_address, uint16_t write
 
 OrcaError Actuator::write_wide_register_blocking(uint16_t reg_address, int32_t write_data, MessagePriority priority)
 {
-	uint16_t split_data[2]{
-		uint16_t(write_data),
-		uint16_t(write_data >> 16)
-	};
-	return write_multiple_registers_blocking(reg_address, 2, split_data, priority);
+	modbus_client.enqueue_transaction(make_wide_register_write_transaction(
+		modbus_server_address, reg_address, write_data, priority));
+	flush();
+	return message_error;
 }
 
 OrcaError Actuator::write_multiple_registers_blocking(uint16_t reg_start_address, uint8_t num_registers, uint16_t* write_data, MessagePriority priority)
@@ -401,6 +426,40 @@ OrcaError Actuator::set_spring_effect(uint8_t spring_id, uint16_t gain, int32_t 
 	return write_multiple_registers_blocking(S0_GAIN_N_MM + spring_id * 6, 6, data);
 }
 
+void Actuator::set_spring_effect_async(uint8_t spring_id, uint16_t gain, int32_t center, uint16_t dead_zone, uint16_t saturation, SpringCoupling coupling) {
+	uint16_t register_data[6] = {
+		gain,
+		uint16_t(center),
+		uint16_t(center >> 16),
+		static_cast<uint16_t>(coupling),
+		dead_zone,
+		saturation
+	};
+	uint8_t data[12];
+	for (int i = 0; i < 6; i++) {
+		data[i * 2] = uint8_t(register_data[i] >> 8);
+		data[i * 2 + 1] = uint8_t(register_data[i]);
+	}
+
+	Transaction transaction = DefaultModbusFunctions::write_multiple_registers_fn(
+		modbus_server_address,
+		S0_GAIN_N_MM + spring_id * 6,
+		6,
+		data,
+		MessagePriority::not_important);
+
+	TransactionQueueTag tag;
+	switch (spring_id) {
+	case 0: tag = TransactionQueueTag::spring0; break;
+	case 1: tag = TransactionQueueTag::spring1; break;
+	case 2: tag = TransactionQueueTag::spring2; break;
+	default:
+		modbus_client.enqueue_transaction(transaction);
+		return;
+	}
+	modbus_client.enqueue_latest_transactions({ transaction }, tag);
+}
+
 //NEEDS TEST
 OrcaError Actuator::set_osc_effect(uint8_t osc_id, uint16_t amplitude, uint16_t frequency_dhz, uint16_t duty, OscillatorType type) {
 	uint16_t data[4] = {
@@ -416,12 +475,34 @@ OrcaError Actuator::set_damper(uint16_t damping) {
 	return write_register_blocking(D0_GAIN_NS_MM, damping);
 }
 
+void Actuator::set_damping_async(uint16_t damping) {
+	Transaction transaction = DefaultModbusFunctions::write_single_register_fn(
+		modbus_server_address, D0_GAIN_NS_MM, damping, MessagePriority::not_important);
+	modbus_client.enqueue_latest_transactions({ transaction }, TransactionQueueTag::damping);
+}
+
 OrcaError Actuator::set_inertia(uint16_t inertia) {
 	return write_register_blocking(I0_GAIN_NS2_MM, inertia);
 }
 
 OrcaError Actuator::set_constant_force(int32_t force) {
 	return write_wide_register_blocking(CONSTANT_FORCE_MN, force);
+}
+
+void Actuator::set_constant_force_async(int32_t force) {
+	Transaction transaction = make_wide_register_write_transaction(
+		modbus_server_address, CONSTANT_FORCE_MN, force, MessagePriority::not_important);
+	modbus_client.enqueue_latest_transactions({ transaction }, TransactionQueueTag::constant_force);
+}
+
+void Actuator::set_friction_async(int32_t friction) {
+	std::vector<Transaction> transactions{
+		make_wide_register_write_transaction(
+			modbus_server_address, kForwardFrictionRegister, friction, MessagePriority::not_important),
+		make_wide_register_write_transaction(
+			modbus_server_address, kReverseFrictionRegister, friction, MessagePriority::not_important)
+	};
+	modbus_client.enqueue_latest_transactions(transactions, TransactionQueueTag::friction);
 }
 
 OrcaError Actuator::set_constant_force_filter(uint16_t force_filter) {

@@ -221,6 +221,12 @@ public:
         Transaction* active_transaction = messages.get_active_transaction();
 
         std::vector<uint8_t> response = serial_interface.receive_bytes_blocking();
+		if (response.empty()) {
+			diagnostic_counters.increment_diagnostic_counter(return_server_no_response_count);
+			active_transaction->invalidate(Transaction::RESPONSE_TIMEOUT_ERROR);
+			conclude_transaction(active_transaction);
+			return;
+		}
 
         for (int i = 0; i < response.size(); i++)
         {
@@ -244,6 +250,14 @@ public:
         messages.enqueue(message);
     }
 
+    void enqueue_latest_transactions(std::vector<Transaction> new_messages, TransactionQueueTag tag) {
+        messages.enqueue_latest(new_messages, tag);
+    }
+
+    bool has_transaction(TransactionQueueTag tag) const {
+        return messages.contains(tag);
+    }
+
     /**
      * @brief Determine if the message at the front of the queue is ready to be claimed - ie has received a response or encountered an error
      * @return true if the message ready to be claimed
@@ -264,7 +278,7 @@ public:
     * @brief get number of messages in the queue
     * @return True if the queue is empty (has no messages), False otherwise.
     */
-    size_t get_queue_size(){
+    size_t get_queue_size() const {
         return messages.size();
     }
 
@@ -524,4 +538,3 @@ private:
 }
 
 #endif
-

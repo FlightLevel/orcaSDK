@@ -26,7 +26,7 @@ void OrcaStream::disable() {
 void OrcaStream::handle_stream()
 {
 	// This object can queue messages on the UART with the either the handshake or the connected run loop
-	if (is_enabled() && modbus_client.get_queue_size() == 0) {
+	if (is_enabled() && !modbus_client.has_transaction(TransactionQueueTag::command_stream)) {
 		motor_stream_command();
 	}
 }
@@ -61,7 +61,7 @@ void OrcaStream::motor_command_fn(uint8_t device_address, uint8_t command_code, 
 	};
 	Transaction my_temp_transaction;
 	my_temp_transaction.load_transmission_data(device_address, motor_command, data_bytes, 5, get_app_reception_length(motor_command));
-	modbus_client.enqueue_transaction(my_temp_transaction);
+	modbus_client.enqueue_latest_transactions({ my_temp_transaction }, TransactionQueueTag::command_stream);
 }
 
 int OrcaStream::get_app_reception_length(uint8_t fn_code) {

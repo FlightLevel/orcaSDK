@@ -29,6 +29,7 @@
 #include "diagnostics_tracker.h"
 #include "transaction.h"
 #include <list>
+#include <vector>
 
 namespace orcaSDK
 {
@@ -76,6 +77,29 @@ public:
     void enqueue(Transaction message){
         message.mark_queued();
         transaction_buffer.push_back(message);
+    }
+
+    void enqueue_latest(std::vector<Transaction> new_messages, TransactionQueueTag tag) {
+        for (auto transaction = transaction_buffer.begin(); transaction != transaction_buffer.end();) {
+            if (transaction->is_queued() && transaction->has_queue_tag(tag)) {
+                transaction = transaction_buffer.erase(transaction);
+            }
+            else {
+                ++transaction;
+            }
+        }
+
+        for (Transaction& message : new_messages) {
+            message.set_queue_tag(tag);
+            enqueue(message);
+        }
+    }
+
+    bool contains(TransactionQueueTag tag) const {
+        for (const Transaction& transaction : transaction_buffer) {
+            if (transaction.has_queue_tag(tag)) return true;
+        }
+        return false;
     }
 
     void insert_next(Transaction message)
@@ -142,7 +166,7 @@ public:
 	 * @brief Determine the number of messages currently in the queue
 	 * @return The number of messages in the queue
 	*/
-   size_t size(){
+   size_t size() const {
 	   return transaction_buffer.size();
    }
 
@@ -154,4 +178,3 @@ private:
 }
 
 #endif
-

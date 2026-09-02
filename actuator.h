@@ -530,6 +530,17 @@ public:
 		SpringCoupling coupling = SpringCoupling::both);
 
 	/**
+	 * @brief Queues the latest configuration for a spring without waiting for a response.
+	 */
+	void set_spring_effect_async(
+		uint8_t spring_id,
+		uint16_t gain,
+		int32_t center,
+		uint16_t dead_zone = 0,
+		uint16_t saturation = 0,
+		SpringCoupling coupling = SpringCoupling::both);
+
+	/**
 	 *	@brief	Enum representing options for different Oscillator Types
 	 */
 	enum OscillatorType
@@ -561,6 +572,11 @@ public:
 	OrcaError set_damper(uint16_t damping);
 
 	/**
+	* @brief Queues the latest damping value without waiting for a response.
+	*/
+	void set_damping_async(uint16_t damping);
+
+	/**
 	*	@brief Sets the inertia value in Haptic Mode
 	*	@param inertia	The inertia gain (64*N*s^2/mm)
 	 *	@note	Please refer to the Orca Series Reference Manual, section Controllers->Haptic Controller
@@ -575,6 +591,17 @@ public:
 	 *			for details.
 	*/
 	OrcaError set_constant_force(int32_t force);
+
+	/**
+	* @brief Queues the latest constant force value without waiting for a response.
+	*/
+	void set_constant_force_async(int32_t force);
+
+	/**
+	* @brief Queues the latest forward and reverse friction values without waiting for responses.
+	* @param friction Friction force in the signed representation used by the ORCA friction registers.
+	*/
+	void set_friction_async(int32_t friction);
 
 	/**
 	*	@brief Sets the constant force filter value in Haptic Mode

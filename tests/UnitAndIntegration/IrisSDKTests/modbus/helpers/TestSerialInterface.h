@@ -23,10 +23,12 @@ public:
 
 	std::vector<char> sendBuffer;
 	int adjusted_baud_rate = 0;
+	int blocking_receive_count = 0;
 
 
 	//Handling TX
-	void tx_enable(size_t) override {
+	void tx_enable(size_t expected_response_size) override {
+		bytes_to_read = expected_response_size;
 		////while there are bytes left to send in the transaction, continue adding them to sendBuf
 		//while (messages.get_active_transaction()->bytes_left_to_send()) {
 		//	send();
@@ -72,10 +74,16 @@ public:
 	}
 
 	std::vector<uint8_t> receive_bytes_blocking() override{
-		return {};
+		blocking_receive_count++;
+		std::vector<uint8_t> response;
+		while (!receive_buffer.empty() && response.size() < bytes_to_read) {
+			response.push_back(receive_byte());
+		}
+		return response;
 	}
 
 private:
 	std::deque<char> receive_buffer;
 	uint64_t current_time = 0;
+	size_t bytes_to_read = 0;
 };
